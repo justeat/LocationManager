@@ -1101,6 +1101,9 @@ BOOL INTUCLHeadingIsIsValid(CLHeading *heading)
 - (void)locationManager:(CLLocationManager *)manager didFailWithError:(NSError *)error
 {
     INTULMLog(@"Location services error: %@", [error localizedDescription]);
+    
+    INTULocationServicesState locationServicesState = [INTULocationManager locationServicesState];
+    
     self.updateFailed = YES;
 
     for (INTULocationRequest *locationRequest in self.locationRequests) {
@@ -1109,7 +1112,11 @@ BOOL INTUCLHeadingIsIsValid(CLHeading *heading)
             [self processRecurringRequest:locationRequest];
         } else {
             // Fail any non-recurring requests
-            [self completeLocationRequest:locationRequest];
+            if (locationServicesState == INTULocationServicesStateNotDetermined && !locationRequest.hasTimedOut) {
+                self.updateFailed = NO;
+            } else {
+                [self completeLocationRequest:locationRequest];
+            }
         }
     }
 }
